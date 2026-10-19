@@ -6,13 +6,36 @@ from langchain_community.vectorstores import Chroma
 
 app = FastAPI(title="Backend Oliver Chatbot - 01 INFORMATICA")
 
-# --- 1. ENDPOINT DE VERIFICACIÓN (El que ya teníamos) ---
+import sqlite3
+
+# --- 1. ENDPOINT DE VERIFICACIÓN (CONECTADO A SQLITE) ---
 @app.get("/verificar_cliente/{telefono}")
 def verificar_cliente(telefono: str):
-    if telefono == "600000000":
-        return {"privilegio": "total", "mensaje": "Hola Adri, ¿qué producto quieres consultar?"}
+    # Conectamos con el archivo que acabamos de crear
+    conexion = sqlite3.connect("clientes.db")
+    cursor = conexion.cursor()
+    
+    # Buscamos el teléfono exacto en la tabla
+    cursor.execute("SELECT nombre, privilegio FROM usuarios WHERE telefono = ?", (telefono,))
+    resultado = cursor.fetchone()
+    
+    # Cerramos la conexión para no bloquear el archivo
+    conexion.close()
+    
+    # Lógica de decisión
+    if resultado:
+        nombre_cliente, nivel_privilegio = resultado
+        return {
+            "estado": "registrado",
+            "privilegio": nivel_privilegio,
+            "mensaje": f"Hola {nombre_cliente}, hemos detectado un privilegio: {nivel_privilegio}."
+        }
     else:
-        return {"privilegio": "denegado"}
+        return {
+            "estado": "no_registrado",
+            "privilegio": "denegado",
+            "mensaje": "Acceso denegado. Para usar a Oliver, regístrate en 01 INFORMATICA."
+        }
 
 # --- 2. NUEVO ENDPOINT: RAG Y RESPUESTA DE LA IA ---
 @app.get("/soporte_tecnico/")
