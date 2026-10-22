@@ -8,6 +8,17 @@ from langchain_community.vectorstores import Chroma
 
 app = FastAPI(title="Backend Oliver Chatbot - 01 INFORMATICA")
 
+from fastapi.middleware.cors import CORSMiddleware
+
+# Permitir que el HTML se comunique con FastAPI
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"], # En producción se pondría el dominio real
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 # --- 1. INICIALIZACIÓN GLOBAL ---
 print("Cargando modelo matemático y bases de datos en memoria...")
 embeddings_locales = OllamaEmbeddings(model="nomic-embed-text")
