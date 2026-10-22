@@ -1,79 +1,104 @@
 from fastapi import FastAPI
 import uvicorn
 import ollama
+import sqlite3
+import chromadb
 from langchain_community.embeddings import OllamaEmbeddings
 from langchain_community.vectorstores import Chroma
 
 app = FastAPI(title="Backend Oliver Chatbot - 01 INFORMATICA")
 
-import sqlite3
+# --- 1. INICIALIZACIÓN GLOBAL ---
+print("Cargando modelo matemático y bases de datos en memoria...")
+embeddings_locales = OllamaEmbeddings(model="nomic-embed-text")
 
-# --- 1. ENDPOINT DE VERIFICACIÓN (CONECTADO A SQLITE) ---
+# SOLUCIÓN: Forzamos la matemática de "Coseno" para que no mida distancias falsas
+cliente_faq = chromadb.PersistentClient(path="./faq_db")
+faq_db = Chroma(
+    client=cliente_faq, 
+    collection_name="cache_oliver", 
+    embedding_function=embeddings_locales,
+    collection_metadata={"hnsw:space": "cosine"} # <--- LA MAGIA ESTÁ AQUÍ
+)
+
+cliente_rag = chromadb.PersistentClient(path="./chroma_db")
+vector_db = Chroma(
+    client=cliente_rag, 
+    collection_name="langchain", 
+    embedding_function=embeddings_locales
+)
+print("Bases de datos cargadas con éxito.")
+
+# --- 1. VERIFICACIÓN DE CLIENTES (SQLITE) ---
 @app.get("/verificar_cliente/{telefono}")
 def verificar_cliente(telefono: str):
-    # Conectamos con el archivo que acabamos de crear
     conexion = sqlite3.connect("clientes.db")
     cursor = conexion.cursor()
-    
-    # Buscamos el teléfono exacto en la tabla
     cursor.execute("SELECT nombre, privilegio FROM usuarios WHERE telefono = ?", (telefono,))
     resultado = cursor.fetchone()
-    
-    # Cerramos la conexión para no bloquear el archivo
     conexion.close()
     
-    # Lógica de decisión
     if resultado:
-        nombre_cliente, nivel_privilegio = resultado
-        return {
-            "estado": "registrado",
-            "privilegio": nivel_privilegio,
-            "mensaje": f"Hola {nombre_cliente}, hemos detectado un privilegio: {nivel_privilegio}."
-        }
-    else:
-        return {
-            "estado": "no_registrado",
-            "privilegio": "denegado",
-            "mensaje": "Acceso denegado. Para usar a Oliver, regístrate en 01 INFORMATICA."
-        }
+        return {"estado": "registrado", "privilegio": resultado[1], "mensaje": f"Hola {resultado[0]}."}
+    return {"estado": "no_registrado", "privilegio": "denegado"}
 
-# --- 2. NUEVO ENDPOINT: RAG Y RESPUESTA DE LA IA ---
+
+# --- 2. SOPORTE TÉCNICO: RAG + AUTO-APRENDIZAJE ---
 @app.get("/soporte_tecnico/")
 def soporte_tecnico(pregunta: str):
-    print("1. Conectando con la base de datos de manuales (ChromaDB)...")
-    # Cargamos las herramientas matemáticas locales
-    embeddings_locales = OllamaEmbeddings(model="nomic-embed-text")
-    vector_db = Chroma(persist_directory="./chroma_db", embedding_function=embeddings_locales)
     
-    # Buscamos los 3 fragmentos del manual que más se parezcan a la pregunta del usuario
-    resultados = vector_db.similarity_search(pregunta, k=3)
+    # FASE 1: BÚSQUEDA EN CACHÉ
+    try:
+        # Solo buscamos si el caché ya tiene algo guardado para evitar errores
+        if faq_db._collection.count() > 0:
+            resultado_cache = faq_db.similarity_search_with_score(pregunta, k=1)
+            if resultado_cache:
+                documento, score = resultado_cache[0]
+                print(f"-> Análisis matemático (Caché): {score}")
+                
+                # Si la puntuación es baja (muy similar), disparamos la respuesta rápida
+                if score < 0.4:
+                    return {
+                        "origen": "Caché Instantáneo (Aprendido)", 
+                        "respuesta": documento.metadata["respuesta"]
+                    }
+    except Exception as e:
+        print(f"Saltando caché por seguridad: {e}")
     
-    # Unimos esos fragmentos en un solo texto (Esto es el "Contexto")
-    contexto_manual = "\n\n".join([doc.page_content for doc in resultados])
     
-    print("2. Formulando el paquete para la IA (Ollama)...")
-    # CAPA 1: Guardrails de Seguridad + Prompt Engineering
+    # FASE 2: RAG CON LLAMA 3.2
+    print("-> Pregunta no cacheada o nueva. Consultando el manual PDF...")
+    resultados_pdf = vector_db.similarity_search(pregunta, k=3)
+    contexto_manual = "\n\n".join([doc.page_content for doc in resultados_pdf])
+    
     system_prompt = f"""
     Eres Oliver, el asistente técnico exclusivo de la empresa 01 INFORMATICA.
-    Tu objetivo es resolver dudas de reparación y soporte técnico basándote ÚNICAMENTE en la información de este manual.
-    Si el usuario te pregunta cosas fuera de la informática (recetas, política, clima), debes negarte a responder y decir que solo ayudas con productos de 01 INFORMATICA.
-    Si la respuesta a la duda no está en el manual adjunto, di: "No he encontrado la solución en el manual. Hemos derivado tu consulta al equipo técnico."
+    Tu objetivo es resolver dudas de reparación basándote ÚNICAMENTE en el siguiente manual.
+    Si la respuesta a la pregunta no aparece en este manual, debes decir EXACTAMENTE: "Lo siento, no he encontrado la solución en el manual."
     
-    AQUÍ TIENES LOS FRAGMENTOS DEL MANUAL DEL CLIENTE:
+    MANUAL:
     {contexto_manual}
     """
     
-    print("3. Generando la respuesta final...")
-    # Llamamos a Llama 3.2 pasándole las instrucciones y la pregunta
     respuesta_ia = ollama.chat(model='llama3.2', messages=[
         {'role': 'system', 'content': system_prompt},
         {'role': 'user', 'content': pregunta}
     ])
     
-    # Devolvemos la respuesta formateada a la página web o WhatsApp
+    texto_final = respuesta_ia['message']['content']
+    
+    # FASE 3: APRENDIZAJE INTELIGENTE
+    # Solo guardamos la respuesta en el caché si la IA supo encontrar la solución
+    if "Lo siento, no he encontrado" not in texto_final:
+        faq_db.add_texts(
+            texts=[pregunta],
+            metadatas=[{"respuesta": texto_final}]
+        )
+        print("-> Nueva respuesta aprendida y guardada en caché.")
+    
     return {
-        "pregunta_del_cliente": pregunta,
-        "respuesta_de_oliver": respuesta_ia['message']['content']
+        "origen": "IA Generativa (Llama 3.2)",
+        "respuesta": texto_final
     }
 
 if __name__ == "__main__":
