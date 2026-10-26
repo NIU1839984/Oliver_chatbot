@@ -112,5 +112,26 @@ def soporte_tecnico(pregunta: str):
         "respuesta": texto_final
     }
 
+# --- 4. ENDPOINT DEL FORO (EXTRAER FAQs APRENDIDAS) ---
+@app.get("/foro_faqs/")
+def obtener_foro_faqs():
+    try:
+        # Extraemos todo el contenido bruto de la base de datos del caché
+        datos = faq_db.get()
+        faqs_publicas = []
+        
+        # Recorremos los datos para emparejar cada pregunta con su respuesta
+        if datos and "documents" in datos:
+            for i in range(len(datos["documents"])):
+                faqs_publicas.append({
+                    "pregunta": datos["documents"][i],
+                    "respuesta": datos["metadatas"][i]["respuesta"]
+                })
+                
+        return {"estado": "ok", "total": len(faqs_publicas), "faqs": faqs_publicas}
+    except Exception as e:
+        return {"estado": "error", "mensaje": str(e), "faqs": []}
+
+        
 if __name__ == "__main__":
     uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)

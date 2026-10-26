@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Foro de Soporte - 01 INFORMATICA</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --brand-cyan: #00f0ff;
+            --brand-blue: #0077ff;
+            --dark-bg: #0b0c10;
+            --glass-bg: rgba(25, 26, 36, 0.7);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: radial-gradient(circle at top right, #121420, var(--dark-bg));
+            color: #e0e6ed;
+            margin: 0;
+            padding: 40px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .header-container {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .brand-title {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 42px;
+            font-weight: 700;
+            background: linear-gradient(90deg, var(--brand-cyan), var(--brand-blue));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin: 0;
+        }
+
+        .brand-subtitle { font-size: 16px; color: #8892b0; margin-top: 10px; }
+
+        #faq-container {
+            width: 100%;
+            max-width: 800px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        /* Tarjetas de FAQ Premium */
+        .faq-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(0, 240, 255, 0.1);
+            border-radius: 12px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .faq-card:hover {
+            border-color: rgba(0, 240, 255, 0.4);
+            box-shadow: 0 5px 15px rgba(0, 240, 255, 0.1);
+        }
+
+        .faq-question {
+            padding: 20px;
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 18px;
+            font-weight: 600;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .faq-answer {
+            padding: 0 20px;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.4s ease, padding 0.4s ease;
+            color: #b0b8cc;
+            font-size: 15px;
+            line-height: 1.6;
+        }
+
+        .faq-card.active .faq-answer {
+            padding: 20px;
+            max-height: 500px;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .icon {
+            color: var(--brand-cyan);
+            font-size: 24px;
+            transition: transform 0.3s ease;
+        }
+
+        .faq-card.active .icon { transform: rotate(45deg); }
+
+        .empty-state { text-align: center; color: #8892b0; font-style: italic; margin-top: 20px; }
+    </style>
+</head>
+<body>
+
+    <div class="header-container">
+        <h1 class="brand-title">FORO DE CONOCIMIENTO</h1>
+        <p class="brand-subtitle">Registro público de incidencias resueltas por la IA Oliver</p>
+    </div>
+
+    <div id="faq-container">
+        <div class="empty-state">Conectando con el registro neuronal de Oliver...</div>
+    </div>
+
+    <script>
+        const baseUrl = "http://127.0.0.1:8000";
+
+        async function cargarFAQs() {
+            const container = document.getElementById("faq-container");
+            
+            try {
+                const respuesta = await fetch(`${baseUrl}/foro_faqs/`);
+                const datos = await respuesta.json();
+
+                if (datos.faqs && datos.faqs.length > 0) {
+                    container.innerHTML = ""; // Limpiamos el mensaje de carga
+                    
+                    // Invertimos el array para que las FAQs más nuevas salgan arriba
+                    datos.faqs.reverse().forEach(faq => {
+                        const tarjeta = document.createElement("div");
+                        tarjeta.className = "faq-card";
+                        
+                        // Formateamos los saltos de línea de la respuesta
+                        const respuestaLimpia = faq.respuesta.replace(/\n/g, '<br>');
+
+                        tarjeta.innerHTML = `
+                            <div class="faq-question" onclick="toggleFaq(this)">
+                                <span><strong style="color: #00f0ff;">Q:</strong> ${faq.pregunta}</span>
+                                <span class="icon">+</span>
+                            </div>
+                            <div class="faq-answer">
+                                <strong style="color: #8892b0;">Oliver IA:</strong><br><br>
+                                ${respuestaLimpia}
+                            </div>
+                        `;
+                        container.appendChild(tarjeta);
+                    });
+                } else {
+                    container.innerHTML = `<div class="empty-state">El registro está vacío. Oliver aún no ha aprendido nuevas soluciones hoy.</div>`;
+                }
+            } catch (error) {
+                container.innerHTML = `<div class="empty-state" style="color: #ff4a68;">Error de conexión con el servidor.</div>`;
+            }
+        }
+
+        // Animación para abrir/cerrar las respuestas
+        function toggleFaq(elemento) {
+            const tarjeta = elemento.parentElement;
+            tarjeta.classList.toggle("active");
+        }
+
+        // Cargar los datos al abrir la página
+        window.onload = cargarFAQs;
+    </script>
+
+</body>
+</html>

@@ -3,32 +3,249 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Oliver - 01 INFORMATICA</title>
+    <title>Oliver AI - 01 INFORMATICA</title>
+    <!-- Fuentes premium de Google -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #1e1e2f; color: white; margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; }
-        #app-container { background-color: #2a2a40; width: 400px; height: 600px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); display: flex; flex-direction: column; overflow: hidden; }
-        
+        :root {
+            --brand-cyan: #00f0ff;
+            --brand-blue: #0077ff;
+            --dark-bg: #0b0c10;
+            --glass-bg: rgba(25, 26, 36, 0.7);
+            --glass-border: rgba(0, 240, 255, 0.2);
+            --text-main: #e0e6ed;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: radial-gradient(circle at top right, #121420, var(--dark-bg));
+            color: var(--text-main);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        #app-container {
+            width: 420px;
+            height: 680px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8), 0 0 20px rgba(0, 240, 255, 0.1);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+        }
+
+        #app-container::before {
+            content: '';
+            position: absolute;
+            top: -50px; right: -50px;
+            width: 150px; height: 150px;
+            background: var(--brand-cyan);
+            filter: blur(100px);
+            opacity: 0.3;
+            z-index: 0;
+        }
+
+        /* --- LOGO ANIMADO PREMIUM --- */
+        .main-logo {
+            width: 110px; /* Ajusta este tamaño si tu logo es muy grande o pequeño */
+            height: auto;
+            margin-bottom: 10px;
+            filter: drop-shadow(0 0 15px rgba(0, 240, 255, 0.6));
+            animation: floatLogo 3.5s ease-in-out infinite;
+        }
+
+        @keyframes floatLogo {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+
         /* PANTALLA DE LOGIN */
-        #login-screen { display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100%; padding: 20px; text-align: center; }
-        #login-screen h1 { color: #00d2ff; }
-        input[type="text"] { width: 80%; padding: 10px; margin: 20px 0; border: none; border-radius: 5px; outline: none; font-size: 16px; }
-        button { background-color: #00d2ff; color: #1e1e2f; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 16px; transition: 0.3s; }
-        button:hover { background-color: #0099cc; }
-        #login-error { color: #ff4c4c; margin-top: 10px; font-size: 14px; }
+        #login-screen {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+            padding: 30px;
+            text-align: center;
+            z-index: 1;
+            transition: opacity 0.5s ease, transform 0.5s ease;
+        }
+
+        .brand-title {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 34px;
+            font-weight: 700;
+            background: linear-gradient(90deg, var(--brand-cyan), var(--brand-blue));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-top: 5px;
+            margin-bottom: 5px;
+            letter-spacing: 2px;
+        }
+
+        .brand-subtitle { font-size: 14px; color: #8892b0; margin-bottom: 40px; }
+
+        input[type="text"] {
+            width: 85%;
+            padding: 15px 20px;
+            margin-bottom: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            color: white;
+            font-size: 16px;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+        
+        input[type="text"]:focus {
+            border-color: var(--brand-cyan);
+            background: rgba(0, 240, 255, 0.05);
+            box-shadow: 0 0 15px rgba(0, 240, 255, 0.2);
+        }
+
+        button {
+            width: 95%;
+            padding: 15px;
+            background: linear-gradient(90deg, var(--brand-blue), var(--brand-cyan));
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 18px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0, 240, 255, 0.3);
+        }
+
+        #login-error { color: #ff4a68; font-size: 13px; margin-top: 15px; min-height: 20px; }
 
         /* PANTALLA DE CHAT */
-        #chat-screen { display: none; flex-direction: column; height: 100%; }
-        #chat-header { background-color: #1e1e2f; padding: 15px; text-align: center; border-bottom: 2px solid #00d2ff; }
-        #chat-header h2 { margin: 0; font-size: 18px; color: #00d2ff; }
+        #chat-screen {
+            display: none;
+            flex-direction: column;
+            height: 100%;
+            z-index: 1;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        #chat-header {
+            padding: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        /* Avatar del logo en pequeño */
+        .bot-avatar-img {
+            width: 45px; 
+            height: 45px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-right: 15px;
+            border: 2px solid var(--brand-cyan);
+            box-shadow: 0 0 15px rgba(0, 240, 255, 0.4);
+            background-color: #1e1e2f; /* Fondo oscuro por si el logo tiene transparencias */
+        }
+
+        #welcome-text { font-family: 'Rajdhani', sans-serif; font-size: 20px; margin: 0; font-weight: 700; color: white; }
+        .status-dot { width: 8px; height: 8px; background-color: #00ff66; border-radius: 50%; display: inline-block; margin-left: 10px; box-shadow: 0 0 8px #00ff66; }
+
+        #chat-box {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            scroll-behavior: smooth;
+        }
         
-        #chat-box { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
-        .message { padding: 10px 15px; border-radius: 15px; max-width: 80%; line-height: 1.4; font-size: 14px; }
-        .user-msg { background-color: #00d2ff; color: #1e1e2f; align-self: flex-end; border-bottom-right-radius: 2px; }
-        .bot-msg { background-color: #3b3b5c; align-self: flex-start; border-bottom-left-radius: 2px; }
-        .bot-origin { font-size: 10px; color: #aaa; margin-bottom: 5px; display: block; border-bottom: 1px solid #555; padding-bottom: 3px; }
+        #chat-box::-webkit-scrollbar { width: 6px; }
+        #chat-box::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+
+        .message {
+            padding: 14px 18px;
+            border-radius: 18px;
+            max-width: 80%;
+            line-height: 1.5;
+            font-size: 14px;
+            animation: slideIn 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+            opacity: 0;
+            transform: translateY(10px);
+        }
+
+        .user-msg {
+            background: linear-gradient(135deg, #2b2d42, #3f3d56);
+            color: white;
+            align-self: flex-end;
+            border-bottom-right-radius: 4px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .bot-msg {
+            background: rgba(0, 240, 255, 0.08);
+            border: 1px solid rgba(0, 240, 255, 0.15);
+            color: var(--text-main);
+            align-self: flex-start;
+            border-bottom-left-radius: 4px;
+        }
+
+        .bot-origin {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--brand-cyan);
+            margin-bottom: 6px;
+            display: inline-block;
+            font-weight: 600;
+        }
+
+        #input-area {
+            padding: 15px 20px;
+            background: rgba(0, 0, 0, 0.3);
+            display: flex;
+            gap: 10px;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        #chat-input { margin-bottom: 0; width: 100%; }
         
-        #input-area { padding: 15px; background-color: #1e1e2f; display: flex; gap: 10px; }
-        #chat-input { flex: 1; padding: 10px; border-radius: 20px; border: none; outline: none; }
+        #send-btn { width: 50px; height: 50px; padding: 0; border-radius: 50%; display: flex; justify-content: center; align-items: center; }
+        #send-btn svg { width: 20px; height: 20px; fill: white; margin-left: 3px; }
+
+        @keyframes slideIn {
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .typing-indicator { display: flex; align-items: center; gap: 4px; padding: 10px 15px; }
+        .dot { width: 6px; height: 6px; background-color: var(--brand-cyan); border-radius: 50%; animation: bounce 1.4s infinite ease-in-out both; }
+        .dot:nth-child(1) { animation-delay: -0.32s; }
+        .dot:nth-child(2) { animation-delay: -0.16s; }
+        
+        @keyframes bounce {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1); }
+        }
     </style>
 </head>
 <body>
@@ -36,24 +253,35 @@
 <div id="app-container">
     <!-- PANTALLA DE ACCESO -->
     <div id="login-screen">
-        <h1>01 INFORMATICA</h1>
-        <p>Introduce tu número de teléfono para acceder a soporte técnico.</p>
-        <input type="text" id="phone-input" placeholder="Ej: 600000000">
-        <button onclick="verificarCliente()">Acceder</button>
+        <!-- AQUÍ SE CARGA EL LOGO PRINCIPAL -->
+        <img src="logo.jpg" alt="01 INFORMATICA Logo" class="main-logo" onerror="this.style.display='none'">
+        
+        <h1 class="brand-title">01 INFORMATICA</h1>
+        <p class="brand-subtitle">Oliver | Sistema Experto de Soporte IA</p>
+        
+        <input type="text" id="phone-input" placeholder="ID de Cliente (Ej: 600000000)" autocomplete="off">
+        <button onclick="verificarCliente()">INICIAR SESIÓN</button>
         <p id="login-error"></p>
     </div>
 
     <!-- PANTALLA DE CHAT -->
     <div id="chat-screen">
         <div id="chat-header">
-            <h2 id="welcome-text">Asistente Oliver</h2>
+            <!-- AQUÍ SE CARGA EL LOGO EN PEQUEÑO COMO AVATAR -->
+            <img src="logo.png" alt="Avatar" class="bot-avatar-img" onerror="this.src='https://via.placeholder.com/45/00f0ff/0b0c10?text=O'">
+            <div>
+                <h2 id="welcome-text">Oliver <span class="status-dot"></span></h2>
+                <div style="font-size: 11px; color: #8892b0; margin-top: 2px;" id="user-privilege">Nivel: Autorizado</div>
+            </div>
         </div>
         <div id="chat-box">
             <!-- Los mensajes aparecerán aquí -->
         </div>
         <div id="input-area">
-            <input type="text" id="chat-input" placeholder="Escribe tu consulta técnica..." onkeypress="if(event.key === 'Enter') enviarMensaje()">
-            <button onclick="enviarMensaje()">Enviar</button>
+            <input type="text" id="chat-input" placeholder="Describa la incidencia técnica..." onkeypress="if(event.key === 'Enter') enviarMensaje()">
+            <button id="send-btn" onclick="enviarMensaje()">
+                <svg viewBox="0 0 24 24"><path d="M2,21L23,12L2,3V10L17,12L2,14V21Z"></path></svg>
+            </button>
         </div>
     </div>
 </div>
@@ -61,60 +289,89 @@
 <script>
     const baseUrl = "http://127.0.0.1:8000";
 
-    // 1. VERIFICACIÓN DEL CLIENTE
+    function showChatScreen() {
+        const login = document.getElementById("login-screen");
+        const chat = document.getElementById("chat-screen");
+        
+        login.style.opacity = "0";
+        login.style.transform = "scale(0.95)";
+        
+        setTimeout(() => {
+            login.style.display = "none";
+            chat.style.display = "flex";
+            void chat.offsetWidth; 
+            chat.style.opacity = "1";
+            chat.style.transform = "translateY(0)";
+        }, 500);
+    }
+
     async function verificarCliente() {
         const telefono = document.getElementById("phone-input").value;
         const errorMsg = document.getElementById("login-error");
         
-        if (!telefono) { errorMsg.innerText = "Por favor, introduce un teléfono."; return; }
-        errorMsg.innerText = "Verificando...";
+        if (!telefono) { errorMsg.innerText = "Error: ID de cliente requerido."; return; }
+        errorMsg.innerText = "Autenticando...";
+        errorMsg.style.color = "#00f0ff";
 
         try {
             const respuesta = await fetch(`${baseUrl}/verificar_cliente/${telefono}`);
             const datos = await respuesta.json();
 
             if (datos.estado === "registrado") {
-                document.getElementById("login-screen").style.display = "none";
-                document.getElementById("chat-screen").style.display = "flex";
-                document.getElementById("welcome-text").innerText = `Oliver - ${datos.privilegio.toUpperCase()}`;
-                añadirMensajeBot("Sistema", datos.mensaje + " ¿En qué puedo ayudarte hoy?");
+                showChatScreen();
+                document.getElementById("user-privilege").innerText = `Cliente: ${datos.privilegio.toUpperCase()}`;
+                
+                setTimeout(() => {
+                    añadirMensajeBot("SISTEMA AUTORIZADO", `${datos.mensaje} Soy Oliver, el sistema experto de 01 INFORMATICA. ¿Qué equipo presenta fallos hoy?`);
+                }, 800);
             } else {
-                errorMsg.innerText = datos.mensaje;
+                errorMsg.style.color = "#ff4a68";
+                errorMsg.innerText = "Acceso denegado. Credenciales no válidas.";
             }
         } catch (error) {
-            errorMsg.innerText = "Error al conectar con el servidor.";
+            errorMsg.style.color = "#ff4a68";
+            errorMsg.innerText = "Error crítico de conexión al servidor local.";
         }
     }
 
-    // 2. ENVIAR MENSAJE A OLIVER Y RECIBIR RESPUESTA RAG/CACHÉ
     async function enviarMensaje() {
         const input = document.getElementById("chat-input");
         const pregunta = input.value.trim();
         if (!pregunta) return;
 
-        // Mostrar el mensaje del usuario en la pantalla
         añadirMensajeUsuario(pregunta);
         input.value = "";
         
-        // Poner a Oliver a "pensar"
-        const idPensando = añadirMensajeBot("Sistema", "Oliver está escribiendo...");
+        const idPensando = añadirAnimacionEscribiendo();
 
         try {
             const respuesta = await fetch(`${baseUrl}/soporte_tecnico/?pregunta=${encodeURIComponent(pregunta)}`);
             const datos = await respuesta.json();
             
-            // Reemplazar el mensaje de "pensando" por la respuesta real
-            actualizarMensajeBot(idPensando, datos.origen, datos.respuesta);
+            const textoFormateado = datos.respuesta.replace(/\n/g, '<br>');
+            actualizarMensajeBot(idPensando, datos.origen, textoFormateado);
         } catch (error) {
-            actualizarMensajeBot(idPensando, "Error", "No se pudo conectar con el cerebro de Oliver.");
+            actualizarMensajeBot(idPensando, "ERROR DE RED", "Se ha perdido la conexión con el nodo RAG.");
         }
     }
 
-    // Funciones visuales (burbujas de chat)
     function añadirMensajeUsuario(texto) {
         const chatBox = document.getElementById("chat-box");
         chatBox.innerHTML += `<div class="message user-msg">${texto}</div>`;
-        chatBox.scrollTop = chatBox.scrollHeight;
+        hacerScroll();
+    }
+
+    function añadirAnimacionEscribiendo() {
+        const chatBox = document.getElementById("chat-box");
+        const id = "msg-" + Date.now();
+        chatBox.innerHTML += `
+            <div class="message bot-msg typing-indicator" id="${id}">
+                <div class="dot"></div>
+                <div class="dot"></div>
+                <div class="dot"></div>
+            </div>`;
+        hacerScroll();
+        return id;
     }
 
     function añadirMensajeBot(origen, texto) {
@@ -122,19 +379,31 @@
         const id = "msg-" + Date.now();
         chatBox.innerHTML += `
             <div class="message bot-msg" id="${id}">
-                <span class="bot-origin">${origen}</span>
+                <span class="bot-origin">⚡ ${origen}</span><br>
                 ${texto}
             </div>`;
-        chatBox.scrollTop = chatBox.scrollHeight;
+        hacerScroll();
         return id;
     }
 
     function actualizarMensajeBot(id, origen, texto) {
         const msgDiv = document.getElementById(id);
+        msgDiv.className = "message bot-msg"; 
         msgDiv.innerHTML = `
-            <span class="bot-origin">${origen}</span>
+            <span class="bot-origin">⚡ ${origen}</span><br>
             ${texto}
         `;
+        hacerScroll();
+    }
+    
+    function hacerScroll() {
+        const chatBox = document.getElementById("chat-box");
+        setTimeout(() => {
+            chatBox.scrollTo({
+                top: chatBox.scrollHeight,
+                behavior: 'smooth'
+            });
+        }, 50);
     }
 </script>
 
