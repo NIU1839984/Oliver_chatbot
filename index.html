@@ -177,7 +177,14 @@
         const baseUrl = "http://127.0.0.1:8000";
         let chatAbierto = false;
         let clienteActual = { telefono: "", nombre: "", productos: [] };
-        let estadoChat = "normal"; // "normal" o "esperando_derivacion"
+        let estadoChat = "normal"; 
+        
+        // MEMORIA DEL CHAT (Array para enviar al backend)
+        let historialConversacion = [];
+        
+        // Variables para el aprendizaje supervisado
+        let ultimaPreguntaPendiente = "";
+        let ultimaRespuestaGenerada = "";
 
         function toggleChat() {
             const ventana = document.getElementById("chat-window");
@@ -245,38 +252,75 @@
 
         async function procesarSoporteRAG(pregunta) {
             const idPensando = añadirAnimacionEscribiendo();
+            
+            // Guardamos la pregunta actual por si hay que confirmarla luego
+            ultimaPreguntaPendiente = pregunta;
 
             try {
-                const res = await fetch(`${baseUrl}/soporte_tecnico/?pregunta=${encodeURIComponent(pregunta)}`);
+                // Preparar la URL enviando la pregunta y el historial en formato JSON
+                const url = new URL(`${baseUrl}/soporte_tecnico/`);
+                url.searchParams.append('pregunta', pregunta);
+                
+                if (historialConversacion.length > 0) {
+                    // Enviamos solo los últimos 4 mensajes (2 pares de usuario/bot) para no saturar
+                    const memoriaCorta = historialConversacion.slice(-4);
+                    url.searchParams.append('historial', JSON.stringify(memoriaCorta));
+                }
+
+                const res = await fetch(url);
                 const datos = await res.json();
                 
-                // Si la IA dice que NO_SOLUCIONADO, activamos la derivación
+                // Añadimos la pregunta del usuario a la memoria interna
+                historialConversacion.push({ rol: "user", contenido: pregunta });
+                
                 if (datos.respuesta.includes("NO_SOLUCIONADO")) {
-                    const mensajeFallo = `Lo siento, no he encontrado la solución en el manual oficial.<br><br>¿Quieres que derive tu consulta al equipo técnico humano de 01 INFORMATICA?
+                    const mensajeFallo = `Lo siento, no he encontrado una solución técnica para eso.<br><br>¿Quieres que derive tu consulta al equipo técnico de 01 INFORMATICA?
                         <div class="btn-horizontal">
                             <button class="chat-btn" onclick="activarDerivacion(true)">[Sí, derivar]</button>
                             <button class="chat-btn" onclick="activarDerivacion(false)">[No, gracias]</button>
                         </div>`;
                     actualizarMensajeBot(idPensando, "Oliver IA", mensajeFallo);
+                    historialConversacion.push({ rol: "assistant", contenido: "NO_SOLUCIONADO" });
                 } else {
-                    // Si encuentra solución, la muestra y pide feedback
+                    // Si hay respuesta válida, la guardamos temporalmente y pedimos feedback
+                    ultimaRespuestaGenerada = datos.respuesta;
                     let textoExito = datos.respuesta.replace(/\n/g, '<br>');
+                    
                     textoExito += `<br><br><strong style="color:var(--brand-cyan);">¿Ha resuelto esto tu duda?</strong>
                         <div class="btn-horizontal">
-                            <button class="chat-btn" onclick="feedbackResuelto(true)">[Sí, gracias]</button>
-                            <button class="chat-btn" onclick="feedbackResuelto(false)">[No, derivar a técnico]</button>
+                            <button class="chat-btn" onclick="feedbackResuelto(true, this)">[Sí, gracias]</button>
+                            <button class="chat-btn" onclick="feedbackResuelto(false, this)">[No, derivar a técnico]</button>
                         </div>`;
+                        
                     actualizarMensajeBot(idPensando, datos.origen, textoExito);
+                    // Añadimos la respuesta del bot a la memoria
+                    historialConversacion.push({ rol: "assistant", contenido: datos.respuesta });
                 }
             } catch (e) {
                 actualizarMensajeBot(idPensando, "ERROR", "Fallo de conexión RAG.");
             }
         }
 
-        function feedbackResuelto(resuelto) {
+        async function feedbackResuelto(resuelto, btnElement) {
+            // Desactivar botones para que no se pulsen dos veces
+            const divPadre = btnElement.parentElement;
+            divPadre.style.opacity = "0.5";
+            divPadre.style.pointerEvents = "none";
+            
             añadirMensajeUsuario(resuelto ? "Sí, gracias" : "No, necesito más ayuda");
+            
             if (resuelto) {
-                añadirMensajeBot("Oliver IA", "¡Genial! Registro guardado. Que tengas un buen día.");
+                añadirMensajeBot("Oliver IA", "¡Genial! He guardado esta solución en la base de datos de conocimiento de la empresa. ¡Que tengas un buen día!");
+                
+                // Llamamos al backend para CONFIRMAR el guardado en ChromaDB
+                const formData = new FormData();
+                formData.append("pregunta", ultimaPreguntaPendiente);
+                formData.append("respuesta", ultimaRespuestaGenerada);
+                
+                try {
+                    await fetch(`${baseUrl}/confirmar_solucion/`, { method: "POST", body: formData });
+                } catch(e) { console.error("Error al guardar en BD"); }
+                
             } else {
                 activarDerivacion(true);
             }
@@ -317,7 +361,6 @@
                     actualizarMensajeBot(idPensando, "ERROR", "Fallo al enviar la incidencia.");
                 }
             } else {
-                // Si es un chat normal, lanzamos la pregunta al RAG
                 procesarSoporteRAG(texto);
             }
         }
